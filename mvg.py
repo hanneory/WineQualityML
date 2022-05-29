@@ -51,7 +51,7 @@ def computeMVG(DTrain, LTrain, DTest, LTest):
         mu = compute_empirical_mean(DTrain[:, LTrain == lab])
         C = compute_empirical_cov(DTrain[:, LTrain == lab])
         h[lab] = (mu, C)
-    
+
     #Matrix of joint density
     SJoint = numpy.zeros((2, DTest.shape[1]))
 
@@ -81,11 +81,8 @@ def computeMVG(DTrain, LTrain, DTest, LTest):
 
     accuracy = (LPred1 == LTest).sum()
     accuracy_rate = accuracy/LTest.size
-
     
-    
-    
-    return(LPred1)
+    return(SJoint.shape, SMarginal.shape)
         
 
 
