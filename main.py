@@ -26,6 +26,7 @@ import sys
 import matplotlib.pyplot as plt
 import sklearn
 import pandas as pd
+import seaborn as sb
 
 
 import logistic_regression
@@ -60,22 +61,32 @@ if __name__ == '__main__':
     D_test, L_test = load('Data/Test.txt')
 
     ## Visualize ##
-    plt.rc ('font', size = 16)
-    plt.rc ('xtick', labelsize=16)
-    plt.rc ('ytick', labelsize = 16)
+    #plt.rc ('font', size = 16)
+    #plt.rc ('xtick', labelsize=16)
+    #plt.rc ('ytick', labelsize = 16)
     #visualize.plot_scatter(D_train, L_train)
     #visualize.plot_hist(D_train, L_train)
     df = pd.read_csv('Data/Train.txt', header = None)
     df.columns = ['fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar', 'chlorides', 'free sulfur dioxide',
     'total sulfur dioxide', 'density', 'pH', 'sulphates', 'alcohol', 'quality']
     
-    plt.rc ('font', size = 7)
-    plt.rc ('xtick', labelsize= 7)
-    plt.rc ('ytick', labelsize = 7)
-    print(df.head())
-    print(df.info())
-    print(df.describe())
-    df.hist(bins=25,figsize=(8,8))
+    #plt.rc ('font', size = 7)
+    #plt.rc ('xtick', labelsize= 7)
+    #plt.rc ('ytick', labelsize = 7)
+    #print(df.head())
+    #print(df.info())
+    #print(df.describe())
+    #df.hist(bins=25,figsize=(8,8))
+    #plt.show()
+
+    #plt.figure(figsize=[10,6])
+    #plt.bar(df[11], df[10], color = 'red')
+    #plt.xlabel('quality')
+    #plt.ylabel('alcohol')
+    #plt.show()
+
+    plt.figure(figsize=[10,6])
+    sb.heatmap(df.corr(), annot=True)
     plt.show()
 
     ## Logistic regression ##
