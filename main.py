@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt
 import sklearn
 import pandas as pd
 import seaborn as sb
+from gaussian import gaussians
 
 
 
@@ -34,12 +35,11 @@ import logistic_regression
 import pca
 import mvg
 import visualize
-
-
+import lda
+import gaussian
 
 def mcol(v):
     return v.reshape((v.size, 1))
-
 
 
 def shuffle(d):
@@ -80,23 +80,17 @@ if __name__ == '__main__':
     plt.rc ('xtick', labelsize=16)
     plt.rc ('ytick', labelsize = 16)
     #visualize.plot_scatter(D_train, L_train)
-    visualize.plot_hist_gaus(D_train, L_train)
+    #visualize.plot_hist_gaus(D_train, L_train)
     df = pd.read_csv('Data/Train.txt', header = None)
 
     df.columns = ['fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar', 'chlorides', 'free sulfur dioxide',
     'total sulfur dioxide', 'density', 'pH', 'sulphates', 'alcohol', 'quality']
-    
+
     plt.rc ('font', size = 7)
     plt.rc ('xtick', labelsize= 7)
     plt.rc ('ytick', labelsize = 7)
-    df.hist(bins=25,figsize=(8,8))
-    plt.show()
-
-    plt.figure(figsize=[10,6])
-    plt.bar(df[11], df[10], color = 'red')
-    plt.xlabel('quality')
-    plt.ylabel('alcohol')
-    plt.show()
+    #df.hist(bins=25,figsize=(8,8))
+    #plt.show()
 
     #----------------------------------------------------HEATMAP----------------------------------------------------------------
     
@@ -117,11 +111,15 @@ if __name__ == '__main__':
     
     #--------------------------------------------------PCA----------------------------------------------------------------------
     
-    #pca.pca(D_test)
+    #pca.pca(D_train)
 
     #-------------------------------------- Multivariate Gaussian Classifier----------------------------------------------------
     
     #print(mvg.computeMVG(D_train, L_train, b , L_test))
+    gaussian.gaussians(D_train, L_train)
+
+    #-------------------------------------------------LDA-----------------------------------------------------------------------
+    #lda.LDA(D_train,L_train)
 
 
 

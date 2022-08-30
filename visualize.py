@@ -63,7 +63,9 @@ def plot_hist_gaus(D, L):
     print(D)
 
     D0 = D[:, L == 0]
+    print(D0.shape[1])
     D1 = D[:, L == 1]
+    print(D1.shape[1])
 
     hFea = {
         0: 'Fixed acidity',
