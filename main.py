@@ -29,14 +29,26 @@ import pandas as pd
 import seaborn as sb
 
 
+
 import logistic_regression
 import pca
 import mvg
 import visualize
 
 
+
 def mcol(v):
     return v.reshape((v.size, 1))
+
+
+
+def shuffle(d):
+    #rearrange samples
+    numpy.random.shuffle(d)
+
+    #split into groups
+    arr = numpy.array_split(d, 40)
+    return arr
 
 
 #load file and and changes row and column. Can't get sklearn to work on mac. 
@@ -60,36 +72,40 @@ if __name__ == '__main__':
     D_train, L_train = load('Data/Train.txt')
     D_test, L_test = load('Data/Test.txt')
 
-    ## Visualize ##
-    #plt.rc ('font', size = 16)
-    #plt.rc ('xtick', labelsize=16)
-    #plt.rc ('ytick', labelsize = 16)
+    #------------------------------------------------PREPROCESSING--------------------------------------------------------------
+    #D_train = gaussianization(D_train)
+
+    #------------------------------------------------VISUALIZATION--------------------------------------------------------------
+    plt.rc ('font', size = 16)
+    plt.rc ('xtick', labelsize=16)
+    plt.rc ('ytick', labelsize = 16)
     #visualize.plot_scatter(D_train, L_train)
-    #visualize.plot_hist(D_train, L_train)
+    visualize.plot_hist_gaus(D_train, L_train)
     df = pd.read_csv('Data/Train.txt', header = None)
+
     df.columns = ['fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar', 'chlorides', 'free sulfur dioxide',
     'total sulfur dioxide', 'density', 'pH', 'sulphates', 'alcohol', 'quality']
     
-    #plt.rc ('font', size = 7)
-    #plt.rc ('xtick', labelsize= 7)
-    #plt.rc ('ytick', labelsize = 7)
-    #print(df.head())
-    #print(df.info())
-    #print(df.describe())
-    #df.hist(bins=25,figsize=(8,8))
-    #plt.show()
-
-    #plt.figure(figsize=[10,6])
-    #plt.bar(df[11], df[10], color = 'red')
-    #plt.xlabel('quality')
-    #plt.ylabel('alcohol')
-    #plt.show()
-
-    plt.figure(figsize=[10,6])
-    sb.heatmap(df.corr(), annot=True)
+    plt.rc ('font', size = 7)
+    plt.rc ('xtick', labelsize= 7)
+    plt.rc ('ytick', labelsize = 7)
+    df.hist(bins=25,figsize=(8,8))
     plt.show()
 
-    ## Logistic regression ##
+    plt.figure(figsize=[10,6])
+    plt.bar(df[11], df[10], color = 'red')
+    plt.xlabel('quality')
+    plt.ylabel('alcohol')
+    plt.show()
+
+    #----------------------------------------------------HEATMAP----------------------------------------------------------------
+    
+    #plt.figure(figsize=[10,6])
+    #sb.heatmap(df.corr(), annot=True)
+    #plt.show()
+
+    #---------------------------------------------Logistic regression-----------------------------------------------------------
+    
     #for lamb in [1e-6, 1e-3, 0.1, 1.0]:
     #    logreg_obj = logistic_regression.logreg_obj_wrap(D_train, L_train, lamb)
     #    _v, _J, _d = scipy.optimize.fmin_l_bfgs_b(logreg_obj, numpy.zeros(D_train.shape[0]+1), approx_grad=True, iprint=1)
@@ -99,11 +115,13 @@ if __name__ == '__main__':
     #    LP = STE > 0
         #print(lamb, _J)
     
-    ## PCA ##
+    #--------------------------------------------------PCA----------------------------------------------------------------------
+    
     #pca.pca(D_test)
 
-    ## Multivariate Gaussian Classifier ##
-    #print(mvg.computeMVG(D_train, L_train, D_test, L_test))
+    #-------------------------------------- Multivariate Gaussian Classifier----------------------------------------------------
+    
+    #print(mvg.computeMVG(D_train, L_train, b , L_test))
 
 
 
