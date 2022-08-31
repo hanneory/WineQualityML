@@ -32,7 +32,7 @@ from gaussian import gaussians
 
 
 import logistic_regression
-import pca
+import preprocessing
 import mvg
 import visualize
 import lda
@@ -80,23 +80,9 @@ if __name__ == '__main__':
     plt.rc ('xtick', labelsize=16)
     plt.rc ('ytick', labelsize = 16)
     #visualize.plot_scatter(D_train, L_train)
-    #visualize.plot_hist_gaus(D_train, L_train)
-    df = pd.read_csv('Data/Train.txt', header = None)
+    visualize.plot_hist_gaus(D_train, L_train)
+    #visualize.plot_general_data()
 
-    df.columns = ['fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar', 'chlorides', 'free sulfur dioxide',
-    'total sulfur dioxide', 'density', 'pH', 'sulphates', 'alcohol', 'quality']
-
-    plt.rc ('font', size = 7)
-    plt.rc ('xtick', labelsize= 7)
-    plt.rc ('ytick', labelsize = 7)
-    #df.hist(bins=25,figsize=(8,8))
-    #plt.show()
-
-    #----------------------------------------------------HEATMAP----------------------------------------------------------------
-    
-    #plt.figure(figsize=[10,6])
-    #sb.heatmap(df.corr(), annot=True)
-    #plt.show()
 
     #---------------------------------------------Logistic regression-----------------------------------------------------------
     
@@ -111,12 +97,12 @@ if __name__ == '__main__':
     
     #--------------------------------------------------PCA----------------------------------------------------------------------
     
-    #pca.pca(D_train)
+    #preprocessing.pca(D_train)
 
     #-------------------------------------- Multivariate Gaussian Classifier----------------------------------------------------
     
     #print(mvg.computeMVG(D_train, L_train, b , L_test))
-    gaussian.gaussians(D_train, L_train)
+    #gaussian.gaussians(D_train, L_train)
 
     #-------------------------------------------------LDA-----------------------------------------------------------------------
     #lda.LDA(D_train,L_train)
