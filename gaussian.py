@@ -4,18 +4,6 @@ import numpy as np
 
 priors = [0.33, 0.67]
 
-def split_db_2to1(D, L, seed=0):
-    nTrain = int(D.shape[1]*2.0/3.0)
-    np.random.seed(seed)
-    idx = np.random.permutation(D.shape[1])
-    idxTrain = idx[0:nTrain]
-    idxTest = idx[nTrain:]
-    DTR = D[:, idxTrain]
-    DTE = D[:, idxTest]
-    LTR = L[idxTrain]
-    LTE = L[idxTest]
-    return (DTR, LTR), (DTE, LTE)
-
 def vcol(V):
     return V.reshape((V.size, 1))
 
@@ -41,7 +29,7 @@ def empirical_covariance(X):
     
         return xcxct
 
-def class_parameters(D, L ,i):
+def class_parameters(D, L , i):
 
     SC = empirical_covariance(D[:, L == i]) #calculate only for relevant data
     UC = empirical_mean(D[:, L == i])
@@ -209,10 +197,8 @@ def Multivariant_Gaussian_Classifier(classes, DTE):
 
 
 
-def gaussians(D, L):
-    # DTR and LTR are training data and labels, DTE and LTE are evaluation data and labels
-    (DTR, LTR), (DTE, LTE) = split_db_2to1(D, L)
-    # We now have 100 samples for training and 50 for evaluation
+def gaussians(DTR, LTR, DTE, LTE):
+    
 
     # FIND THE EMPIRICAL MEAN AND COVARIANCE
     U0, S0 = class_parameters(DTR, LTR, 0)
