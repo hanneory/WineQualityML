@@ -36,7 +36,7 @@ def class_parameters(D, L , i):
 
     return UC, SC
 
-def logpdf_GAU_ND(X, mu, C):
+def logpdf_GAU_ND0(X, mu, C):
 
     M, num_cols = X.shape
     P = np.linalg.inv(C)
@@ -56,6 +56,60 @@ def logpdf_GAU_ND(X, mu, C):
     # The sigma computations are costly, maybe calculate them before entering the loop
     # Even better is doing all the constant calculations first
     return np.array(Y).ravel() # 1D floating point
+
+#ADDED
+def logpdf_GAU_ND(X, mu, C):
+    P = np.linalg.inv(C)
+    return -0.5*X.shape[0]*np.log(np.pi*2) + 0.5*np.linalg.slogdet(P)[1] - 0.5*(np.dot(P, (X-mu))*(X-mu)).sum(0)
+
+def ML_GAU(D):
+    mu = vcol(D.mean(1))
+    C = np.dot(D-mu, (D-mu).T)/float(D.shape[1])
+    return mu, C
+
+
+def GAU(D_train, L_train, D_test, L_test):
+    h = {}
+
+    for i in [0, 1]:
+        DX = D_train[:, L_train == i]
+        mu, C = ML_GAU(DX)
+        h[i] = (mu, C)
+
+    #we now have one table for each class
+
+    SJoint = np.zeros((2, D_test.shape[1]))
+    logSJoint = np.zeros((2, D_test.shape[1]))
+
+    classPriors = priors
+
+    for i in [0,1]:
+        #compute class conditional densities
+        mu, C = h[i]
+        SJoint[i, :] = np.exp(logpdf_GAU_ND(D_test, mu, C).ravel()) * classPriors[i]
+        logSJoint[i, :] = logpdf_GAU_ND(D_test, mu, C).ravel() * np.log(classPriors[i])
+
+    SMarginal = SJoint.sum(0)
+    logSMarginal = scipy.special.logsumexp(logSJoint, axis=0)
+
+    Post1 = SJoint / vrow(SMarginal)
+    #not log
+    logPost = logSJoint - vrow(logSMarginal)
+    Post2 = np.exp(logPost)
+    #log
+
+    #print this
+    LPred1 = Post1.argmax(axis=0)
+    accuracy = (L_test == LPred1).sum() / L_test.size
+    errors = 1 - accuracy
+
+    print("GAUSSIAN CLASSIFIER")
+    print("Accuracy: ", accuracy*100, "%")
+
+    
+
+
+
 
 
 
@@ -105,7 +159,6 @@ def Naive_bayes_gaussian_classifier(classes, DTE):
 
     return prediction, logPrediction
 
-
 def Tied_Covariance_Gaussian_Classifier(classes, DTE):
     
     # her kunne vi byttet ut 3 med en mer generisk måte å finne antall klasser på 
@@ -117,7 +170,7 @@ def Tied_Covariance_Gaussian_Classifier(classes, DTE):
     classPriors = priors
 
     #DENNNE KAN BLI FEIL
-    tied_cov = np.zeros((11,11))
+    tied_cov = np.zeros((DTE.shape[0],DTE.shape[0]))
 
     # CREATE TIED COVARIANCE MATRIX
     for i in [0,1]:
@@ -153,8 +206,6 @@ def Tied_Covariance_Gaussian_Classifier(classes, DTE):
     logPrediction = logPosterior.argmax(0)
 
     return prediction, logPrediction
-
-
 
 def Multivariant_Gaussian_Classifier(classes, DTE):
 
