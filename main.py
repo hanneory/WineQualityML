@@ -27,16 +27,15 @@ import matplotlib.pyplot as plt
 import sklearn
 import pandas as pd
 import seaborn as sb
-from gaussian import gaussians
 
 
 
 import logistic_regression
-import preprocessing
+import preprocessing as p
 import mvg
-import visualize
+import visualize as v
 import lda
-import gaussian
+import gaussian as g
 
 def mcol(v):
     return v.reshape((v.size, 1))
@@ -73,15 +72,21 @@ if __name__ == '__main__':
     D_test, L_test = load('Data/Test.txt')
 
     #------------------------------------------------PREPROCESSING--------------------------------------------------------------
-    #D_train = gaussianization(D_train)
+    
+    # DTR and LTR are training data and labels, DTE and LTE are evaluation data and labels
+    (DTR, LTR), (DTE, LTE) = p.split_db_2to1(D_train, L_train)
+
+    # ZERO-VALUE HANDLING
+    
+
+    # GAUSSIANIZATION
+    DTR_g = p.gaussianize(DTR, LTR)
+    DTE_g = p.gaussianize(DTE, LTE)
 
     #------------------------------------------------VISUALIZATION--------------------------------------------------------------
-    plt.rc ('font', size = 16)
-    plt.rc ('xtick', labelsize=16)
-    plt.rc ('ytick', labelsize = 16)
-    #visualize.plot_scatter(D_train, L_train)
-    visualize.plot_hist_gaus(D_train, L_train)
-    #visualize.plot_general_data()
+    #v.plot_scatter(D_train, L_train)
+    #v.plot_gaus(D_train, L_train)
+    #v.plot_general_data()
 
 
     #---------------------------------------------Logistic regression-----------------------------------------------------------
@@ -97,12 +102,14 @@ if __name__ == '__main__':
     
     #--------------------------------------------------PCA----------------------------------------------------------------------
     
-    #preprocessing.pca(D_train)
+    #p.pca(D_train)
 
     #-------------------------------------- Multivariate Gaussian Classifier----------------------------------------------------
     
-    #print(mvg.computeMVG(D_train, L_train, b , L_test))
-    #gaussian.gaussians(D_train, L_train)
+    print("UNPROCESSED DATA")
+    g.gaussians(DTR, LTR, DTE, LTE)
+    print("GAUSSIANIZED DATA")
+    g.gaussians(DTR_g, LTR, DTE_g, LTE)
 
     #-------------------------------------------------LDA-----------------------------------------------------------------------
     #lda.LDA(D_train,L_train)

@@ -68,7 +68,7 @@ def mrow(V):
     return V.reshape((1, V.size))
 
 
-def plot_hist_gaus(D, L):
+def plot_gaus(D, L):
     bc = preprocessing.PowerTransformer()
 
     D0 = D[:, L == 0]
@@ -102,10 +102,17 @@ def plot_hist_gaus(D, L):
     df = pd.DataFrame(D_trans_bc)
     df.columns = ['fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar', 'chlorides', 'free sulfur dioxide',
     'total sulfur dioxide', 'density', 'pH', 'sulphates', 'alcohol']
-    plt.rc ('font', size = 7)
+    plt.rc ('font', size = 8)
     plt.rc ('xtick', labelsize= 7)
     plt.rc ('ytick', labelsize = 7)
     df.hist(figsize=(8,8))
+    plt.show()
+
+    # CREATE HEATMA
+    sb.heatmap(df.corr(), annot=True)
+    plt.rc ('font', size = 7)
+    plt.rc ('xtick', labelsize= 7)
+    plt.rc ('ytick', labelsize = 7)
     plt.show()
 
 def plot_scatter(D, L):
