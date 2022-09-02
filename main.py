@@ -90,16 +90,17 @@ if __name__ == '__main__':
 
 
     # GAUSSIANIZATION
-    DTR_g = p.gaussianize(DTR, LTR)
-    DTE_g = p.gaussianize(DTE, LTE)
+    #DTR_g = p.gaussianize(DTR, LTR)
+    #DTE_g = p.gaussianize(DTE, LTE)
 
     #--------------------------------------------------PCA----------------------------------------------------------------------
     
     # define dimension wanted to reduce to
-    dim = 5
+    dim = 9
 
     DTR_p = p.pca(DTR, dim)
     DTE_p = p.pca(DTE, dim)
+
 
     #---------------------------------------------Logistic regression-----------------------------------------------------------
     
@@ -117,11 +118,15 @@ if __name__ == '__main__':
     #-------------------------------------- Multivariate Gaussian Classifier----------------------------------------------------
     
     print("GAUSSIAN CLASSIFICATION \n")
-    #priors = [0.5, 0.5]
-    priors = [0.33, 0.67]
+    priors = [0.5, 0.5]
+    #priors = [0.33, 0.67]
     
+
     print("PCA PROCESSED DATA")
     g.gaussian_classifiers(priors, DTR_p, LTR, DTE_p, LTE)
+
+    #print("HANNES PCA")
+    #g.gaussian_classifiers(priors, DTR_p0, LTR, DTE_p0, LTE)
 
     print("UNPROCESSED DATA")
     g.gaussian_classifiers(priors, DTR, LTR, DTE, LTE)

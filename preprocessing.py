@@ -7,46 +7,34 @@ import pandas as pd
 def mcol(v):
     return v.reshape((v.size, 1))
 
-def pca(D, dim):
-    #mu = D.mean(1)
-    #DC = D - mu.reshape((mu.size, 1)) 
-    #C = numpy.dot(DC, DC.T) / D.shape[1]
-    #s, U = numpy.linalg.eigh(C)
+def pca0(D, dim):
+    mu = D.mean(1)
+    DC = D - mu.reshape((mu.size, 1)) 
+    C = numpy.dot(DC, DC.T) / D.shape[1]
+    s, U = numpy.linalg.eigh(C)
    
     #select larges eigenvalues
-    #P = U[:, ::-1][:, 0:dim]
+    P = U[:, ::-1][:, 0:dim]
+    DP = numpy.dot(P.T, D)
 
+    return DP
+
+def pca(D, dim):
     #NEXT ATTEMPT
     mu = D.mean(1) #as we want to compute over the axis=1 bc columns
 
-    covar_matrix = 0
-
     # centered dataset
     xc = D - vcol(mu) #mu needs to be a column vector here
-    xcxct = numpy.dot(xc, xc.T)  / D.shape[1]
-    covar_matrix = covar_matrix + xcxct
-
-    #compute eigenvectors and eigenvalues
-    s, U = numpy.linalg.eigh(covar_matrix)
-
-    # s = eigenvalues sorted from smallest to largest 
-    # U = corresponding eigenvectors to s
-
-    # We want to extract the m largest eigenvectors from U
-    # reverse the order
-    # set in columns
-
-    P = U[:, ::-1][:, 0:dim]
+    C = numpy.dot(xc, xc.T)  / D.shape[1]
 
     # We can also get them from directly taking a SVD - Singular value decomposition
-    U, s, Vh = numpy.linalg.svd(covar_matrix)
+    U, s, Vh = numpy.linalg.svd(C)
 
     # U and s now sorted in descending order
-    # Select the m largest
     P = U[:, 0:dim]
 
     #project dataset
-    DP = numpy.dot(P.T, D)   
+    DP = numpy.dot(P.T, D)  
 
     return DP
 
