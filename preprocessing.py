@@ -3,6 +3,7 @@ import pylab
 import matplotlib.pyplot as plt
 from sklearn import preprocessing  as pp
 import pandas as pd
+import scipy.stats
 
 def mcol(v):
     return v.reshape((v.size, 1))
@@ -38,29 +39,29 @@ def pca(D, dim):
 
     return DP
 
-def gaussianize(D,L):
-    bc = pp.PowerTransformer()
+def gaussianize(DTR, DTE):
+    rDTR = numpy.zeros(DTR.shape)
+    rDTE = numpy.zeros(DTE.shape)
 
-    D0 = D[:, L == 0]
-    D1 = D[:, L == 1]
+    # compute rank over training set
+    for f in range(DTR.shape[0]):
+        for e in range(DTR.shape[1]):
+            rDTR[f][e] = (DTR[f] < DTR[f][e]).sum()
+    
+    rDTR = (rDTR + 1)/(DTR.shape[1] + 2) 
 
-    D_trans_bc = numpy.zeros([len(D[0]),1])
+    # rank over test set
+    for f in range(DTE.shape[0]):
+        for e in range(DTE.shape[1]):
+            rDTE[f][e] = (DTE[f] < DTE[f][e]).sum()
+    
+    rDTE = (rDTE + 1)/(DTR.shape[1] + 2) 
 
-    for dIdx in range(11):
+    #compute transformed feature
+    yTR = scipy.stats.norm.ppf(rDTR)
+    yTE = scipy.stats.norm.ppf(rDTE)
 
-        X0_trans_bc = bc.fit_transform(D0[dIdx,:].reshape(-1,1), D0[dIdx,:].reshape(-1,1))
-        X1_trans_bc = bc.fit_transform(D1[dIdx,:].reshape(-1,1), D1[dIdx,:].reshape(-1,1))
-
-        if dIdx == 7: 
-            X1_trans_bc = X1_trans_bc * (3e15)
-
-        D_insert = numpy.append(X0_trans_bc, X1_trans_bc)
-        D_insert = numpy.reshape(D_insert, (len(D_insert), 1))
-        D_trans_bc = numpy.append(D_trans_bc, D_insert, axis=1)
-
-    D_trans_bc = numpy.delete(D_trans_bc, 0 , axis=1)
-
-    return D_trans_bc.T
+    return yTR, yTE
 
 
 def split_db_2to1(D, L, seed=0):

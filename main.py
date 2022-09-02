@@ -30,25 +30,23 @@ import seaborn as sb
 
 
 
-import logistic_regression
-import svm
+import logistic_regression as l
+import svm as s
 import preprocessing as p
 import visualize as v
-import lda
 import gaussian as g
+
 
 def mcol(v):
     return v.reshape((v.size, 1))
 
 
-
-
-def shuffle(d):
+def k_fold(d, n):
     #rearrange samples
-    numpy.random.shuffle(d)
+    d = numpy.random.shuffle(d)
 
     #split into groups
-    arr = numpy.array_split(d, 40)
+    arr = numpy.array_split(d, n)
     return arr
 
 
@@ -76,11 +74,6 @@ if __name__ == '__main__':
     D_train, L_train = load('Data/Train.txt')
     D_test, L_test = load('Data/Test.txt')
 
-    #------------------------------------------------VISUALIZATION--------------------------------------------------------------
-    
-    #v.plot_scatter(D_train, L_train)
-    #v.plot_gaus(D_train, L_train)
-    #v.plot_general_data()
 
     #------------------------------------------------PREPROCESSING--------------------------------------------------------------
     
@@ -93,8 +86,8 @@ if __name__ == '__main__':
 
 
     # GAUSSIANIZATION
-    #DTR_g = p.gaussianize(DTR, LTR)
-    #DTE_g = p.gaussianize(DTE, LTE)
+    DTR_g, DTE_g = p.gaussianize(DTR, DTE)
+
 
     #--------------------------------------------------PCA----------------------------------------------------------------------
     
@@ -104,35 +97,35 @@ if __name__ == '__main__':
     DTR_p = p.pca(DTR, dim)
     DTE_p = p.pca(DTE, dim)
 
+    #------------------------------------------------VISUALIZATION--------------------------------------------------------------
+    
+    #v.plot_scatter(D_train, L_train)
+    v.plot_gaus(DTR, LTR, DTE, LTE)
+    #v.plot_general_data()
+
 
     #---------------------------------------------Logistic regression-----------------------------------------------------------
     
     #print("LOGISITC REGRESSION CLASSIFICATION")
 
-    #for lamb in [1e-6, 1e-3, 0.1, 1.0]:
-    #    logreg_obj = logistic_regression.logreg_obj_wrap(D_train, L_train, lamb)
-    #    _v, _J, _d = scipy.optimize.fmin_l_bfgs_b(logreg_obj, numpy.zeros(D_train.shape[0]+1), approx_grad=True, iprint=1)
-    #    _w = _v[0: D_train.shape[0]]
-    #    _b = _v[-1]
-    #    STE = numpy.dot(_w.T, D_test) + _b
-    #    LP = STE > 0
-        #print(lamb, _J)
+    #lamb = [1e-6, 1e-3, 0.1, 1.0, 2.0 , 10.0]
+    #l.log_reg_classifier(DTR, LTR, DTE, LTE, lamb)
 
     #-------------------------------------- Multivariate Gaussian Classifier----------------------------------------------------
     
-    print("GAUSSIAN CLASSIFICATION \n")
-    priors = [0.5, 0.5]
+    #print("GAUSSIAN CLASSIFICATION \n")
+    #priors = [0.5, 0.5]
     #priors = [0.33, 0.67]
     
 
-    print("PCA PROCESSED DATA")
-    g.gaussian_classifiers(priors, DTR_p, LTR, DTE_p, LTE)
+    #print("PCA PROCESSED DATA")
+    #g.gaussian_classifiers(priors, DTR_p, LTR, DTE_p, LTE)
 
     #print("HANNES PCA")
     #g.gaussian_classifiers(priors, DTR_p0, LTR, DTE_p0, LTE)
 
-    print("UNPROCESSED DATA")
-    g.gaussian_classifiers(priors, DTR, LTR, DTE, LTE)
+    #print("UNPROCESSED DATA")
+    #g.gaussian_classifiers(priors, DTR, LTR, DTE, LTE)
 
     #print("GAUSSIANIZED DATA")
     #g.gaussian_classifiers(priors, DTR_g, LTR, DTE_g, LTE)
@@ -149,16 +142,16 @@ if __name__ == '__main__':
 
     #-------------------------------------- Support Vector Machine ----------------------------------------------------
 
-    clf = svm.SVM(n_iters=1000)
-    clf.fit(D_train, L_train)
-    predictions = clf.predict(L_train)
+    #clf = s.SVM()
+    #clf.fit(D_train, L_train)
+    #predictions = clf.predict(L_train)
 
-    def accuracy(y_true, y_pred):
-        accuracy = numpy.sum(y_true==y_pred) / len(y_true)
-        return accuracy*100
+    #def accuracy(y_true, y_pred):
+    #    accuracy = numpy.sum(y_true==y_pred) / len(y_true)
+    #    return accuracy*100
 
-    print("Support Vector Machine")
-    print("Accuracy: ", accuracy(L_test, predictions), "%")
+    #print("Support Vector Machine")
+    #print("Accuracy: ", accuracy(L_test, predictions), "%")
 
 
 
