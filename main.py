@@ -31,6 +31,7 @@ import seaborn as sb
 
 
 import logistic_regression
+import svm
 import preprocessing as p
 import visualize as v
 import lda
@@ -38,6 +39,8 @@ import gaussian as g
 
 def mcol(v):
     return v.reshape((v.size, 1))
+
+
 
 
 def shuffle(d):
@@ -144,9 +147,18 @@ if __name__ == '__main__':
 
     #lda.LDA(D_train,L_train)
 
-    #-------------------------------------------------SVM-----------------------------------------------------------------------
+    #-------------------------------------- Support Vector Machine ----------------------------------------------------
 
-    #print("STATIC VECTOR MACINE CLASSIFICATION")
+    clf = svm.SVM(n_iters=1000)
+    clf.fit(D_train, L_train)
+    predictions = clf.predict(L_train)
+
+    def accuracy(y_true, y_pred):
+        accuracy = numpy.sum(y_true==y_pred) / len(y_true)
+        return accuracy*100
+
+    print("Support Vector Machine")
+    print("Accuracy: ", accuracy(L_test, predictions), "%")
 
 
 
