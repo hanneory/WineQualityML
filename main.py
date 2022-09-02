@@ -32,7 +32,6 @@ import seaborn as sb
 
 import logistic_regression
 import preprocessing as p
-import mvg
 import visualize as v
 import lda
 import gaussian as g
@@ -97,7 +96,7 @@ if __name__ == '__main__':
     #--------------------------------------------------PCA----------------------------------------------------------------------
     
     # define dimension wanted to reduce to
-    dim = 9
+    dim = 5
 
     DTR_p = p.pca(DTR, dim)
     DTE_p = p.pca(DTE, dim)
@@ -117,19 +116,18 @@ if __name__ == '__main__':
 
     #-------------------------------------- Multivariate Gaussian Classifier----------------------------------------------------
     
-    print("GAUSSIAN CLASSIFICATION")
+    print("GAUSSIAN CLASSIFICATION \n")
+    #priors = [0.5, 0.5]
+    priors = [0.33, 0.67]
+    
+    print("PCA PROCESSED DATA")
+    g.gaussian_classifiers(priors, DTR_p, LTR, DTE_p, LTE)
 
     print("UNPROCESSED DATA")
-    g.gaussians(DTR, LTR, DTE, LTE)
-    
-    #print("PCA PROCESSED DATA")
-    #g.gaussians(DTR_p, LTR, DTE_p, LTE)
-
-    print("cumanis verison")
-    g.GAU(DTR, LTR, DTE, LTE)
+    g.gaussian_classifiers(priors, DTR, LTR, DTE, LTE)
 
     #print("GAUSSIANIZED DATA")
-    #g.gaussians(DTR_g, LTR, DTE_g, LTE)
+    #g.gaussian_classifiers(priors, DTR_g, LTR, DTE_g, LTE)
 
     #---------------------------------------Mixed Model Gaussian Classifier-----------------------------------------------------
 
