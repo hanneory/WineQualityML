@@ -33,7 +33,6 @@ import seaborn as sb
 import logistic_regression
 import svm
 import preprocessing as p
-import mvg
 import visualize as v
 import lda
 import gaussian as g
@@ -71,8 +70,17 @@ def load(fname):
     return numpy.hstack(DList), numpy.array(labelList, dtype = numpy.int32) #Liste med vectors som eg stacke horisontalt som vil gi meg ei matrise. Har også list of labels som lager label-array.
 
 if __name__ == '__main__':
+
+    #--------------------------------------------------LOAD DATA----------------------------------------------------------------
+   
     D_train, L_train = load('Data/Train.txt')
     D_test, L_test = load('Data/Test.txt')
+
+    #------------------------------------------------VISUALIZATION--------------------------------------------------------------
+    
+    #v.plot_scatter(D_train, L_train)
+    #v.plot_gaus(D_train, L_train)
+    #v.plot_general_data()
 
     #------------------------------------------------PREPROCESSING--------------------------------------------------------------
     
@@ -80,20 +88,26 @@ if __name__ == '__main__':
     (DTR, LTR), (DTE, LTE) = p.split_db_2to1(D_train, L_train)
 
     # ZERO-VALUE HANDLING
-    
+    DTR = p.zero_values(DTR)
+    DTE = p.zero_values(DTE)
+
 
     # GAUSSIANIZATION
     DTR_g = p.gaussianize(DTR, LTR)
     DTE_g = p.gaussianize(DTE, LTE)
 
-    #------------------------------------------------VISUALIZATION--------------------------------------------------------------
-    #v.plot_scatter(D_train, L_train)
-    #v.plot_gaus(D_train, L_train)
-    #v.plot_general_data()
+    #--------------------------------------------------PCA----------------------------------------------------------------------
+    
+    # define dimension wanted to reduce to
+    dim = 5
 
+    DTR_p = p.pca(DTR, dim)
+    DTE_p = p.pca(DTE, dim)
 
     #---------------------------------------------Logistic regression-----------------------------------------------------------
     
+    #print("LOGISITC REGRESSION CLASSIFICATION")
+
     #for lamb in [1e-6, 1e-3, 0.1, 1.0]:
     #    logreg_obj = logistic_regression.logreg_obj_wrap(D_train, L_train, lamb)
     #    _v, _J, _d = scipy.optimize.fmin_l_bfgs_b(logreg_obj, numpy.zeros(D_train.shape[0]+1), approx_grad=True, iprint=1)
@@ -102,19 +116,30 @@ if __name__ == '__main__':
     #    STE = numpy.dot(_w.T, D_test) + _b
     #    LP = STE > 0
         #print(lamb, _J)
-    
-    #--------------------------------------------------PCA----------------------------------------------------------------------
-    
-    #p.pca(D_train)
 
     #-------------------------------------- Multivariate Gaussian Classifier----------------------------------------------------
     
+    print("GAUSSIAN CLASSIFICATION \n")
+    #priors = [0.5, 0.5]
+    priors = [0.33, 0.67]
+    
+    print("PCA PROCESSED DATA")
+    g.gaussian_classifiers(priors, DTR_p, LTR, DTE_p, LTE)
+
     print("UNPROCESSED DATA")
-    g.gaussians(DTR, LTR, DTE, LTE)
-    print("GAUSSIANIZED DATA")
-    g.gaussians(DTR_g, LTR, DTE_g, LTE)
+    g.gaussian_classifiers(priors, DTR, LTR, DTE, LTE)
+
+    #print("GAUSSIANIZED DATA")
+    #g.gaussian_classifiers(priors, DTR_g, LTR, DTE_g, LTE)
+
+    #---------------------------------------Mixed Model Gaussian Classifier-----------------------------------------------------
+
+    #print("MIXED MODEL GAUSSIAN CLASSIFICATION")
 
     #-------------------------------------------------LDA-----------------------------------------------------------------------
+    
+    #print("LDA CLASSIFICATION")
+
     #lda.LDA(D_train,L_train)
 
     #-------------------------------------- Support Vector Machine ----------------------------------------------------
@@ -129,8 +154,6 @@ if __name__ == '__main__':
 
     print("Support Vector Machine")
     print("Accuracy: ", accuracy(L_test, predictions), "%")
-
-
 
 
 

@@ -52,7 +52,10 @@ def plot_general_data():
     plt.show()
     plt.savefig('pairplot.pdf')
 
-    # CREATE HEATMA
+    # CREATE HEATMAP
+    plt.rc ('font', size = 7)
+    plt.rc ('xtick', labelsize= 7)
+    plt.rc ('ytick', labelsize = 7)
     sb.heatmap(df.corr(), annot=True)
     plt.show()
 
@@ -108,9 +111,9 @@ def plot_gaus(D, L):
     df.hist(figsize=(8,8))
     plt.show()
 
-    # CREATE HEATMA
+    # CREATE HEATMAP
     sb.heatmap(df.corr(), annot=True)
-    plt.rc ('font', size = 7)
+    plt.rc ('font', size = 8)
     plt.rc ('xtick', labelsize= 7)
     plt.rc ('ytick', labelsize = 7)
     plt.show()
