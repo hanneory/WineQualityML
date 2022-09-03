@@ -30,24 +30,21 @@ import seaborn as sb
 
 
 
-import logistic_regression as l
-import svm as s
+import LR as l
+import SVM as s
+import GAU as g
+import support_functions as sf
 import preprocessing as p
-import visualize as v
-import gaussian as g
 
 
-def mcol(v):
-    return v.reshape((v.size, 1))
 
-
-def k_fold(d, n):
+def shuffle(D, L):
     #rearrange samples
-    d = numpy.random.shuffle(d)
+    i = numpy.random.permutation(D.shape[1])
+    D = D[:, i]
+    L = L[:, i]
 
-    #split into groups
-    arr = numpy.array_split(d, n)
-    return arr
+    return D, L
 
 
 #load file and and changes row and column. Can't get sklearn to work on mac. 
@@ -59,7 +56,7 @@ def load(fname):
         for line in f:
             try:
                 attrs = line.split(',')[0:11]
-                attrs = mcol(numpy.array([float(i) for i in attrs])) 
+                attrs = sf.mcol(numpy.array([float(i) for i in attrs])) 
                 name = line.split(',')[-1].strip()
                 DList.append(attrs)
                 labelList.append(float(name))
@@ -74,35 +71,52 @@ if __name__ == '__main__':
     D_train, L_train = load('Data/Train.txt')
     D_test, L_test = load('Data/Test.txt')
 
+    #D_train = numpy.random.shuffle(D_train)
+
+    #------------------------------------------------VISUALIZATION--------------------------------------------------------------
+    
+    #sf.plot_scatter(D_train, L_train)
+    #sf.plot_gaus(DTR, LTR, DTE, LTE)
+    #sf.plot_general_data()
 
     #------------------------------------------------PREPROCESSING--------------------------------------------------------------
     
     # DTR and LTR are training data and labels, DTE and LTE are evaluation data and labels
     (DTR, LTR), (DTE, LTE) = p.split_db_2to1(D_train, L_train)
 
+    # SHUFFLE DATASET
+    # DTR, LTR = shuffle(D_train, L_train)
+
     # ZERO-VALUE HANDLING
     DTR = p.zero_values(DTR)
     DTE = p.zero_values(DTE)
 
-
     # GAUSSIANIZATION
     DTR_g, DTE_g = p.gaussianize(DTR, DTE)
 
+    # SPLIT INTO X FOLDS GAUSSIANIZED
+    #nFolds = 3
+    #DTR_sg = numpy.array_split(DTR_g, nFolds, axis=1)
+    #LTR_sg = numpy.array_split(LTR_g, nFolds)
 
+    # SPLIT INTO X FOLDS RAW
+    #nFolds = 3
+    #DTR_s = numpy.array_split(DTR, nFolds, axis=1)
+    #LTR_s = numpy.array_split(LTR, nFolds)
     #--------------------------------------------------PCA----------------------------------------------------------------------
     
     # define dimension wanted to reduce to
-    dim = 9
+    dim = 10
 
+    # UNPROCESSED PCA
     DTR_p = p.pca(DTR, dim)
+    #DTR_p = DTR_p[0]
     DTE_p = p.pca(DTE, dim)
+    #DTE_p = DTE_p[0]
 
-    #------------------------------------------------VISUALIZATION--------------------------------------------------------------
-    
-    #v.plot_scatter(D_train, L_train)
-    v.plot_gaus(DTR, LTR, DTE, LTE)
-    #v.plot_general_data()
-
+    # GRASSIANIZED PCA
+    DTR_gp = p.pca(DTR_g, dim)
+    DTE_gp = p.pca(DTE_g, dim)
 
     #---------------------------------------------Logistic regression-----------------------------------------------------------
     
@@ -113,22 +127,19 @@ if __name__ == '__main__':
 
     #-------------------------------------- Multivariate Gaussian Classifier----------------------------------------------------
     
-    #print("GAUSSIAN CLASSIFICATION \n")
-    #priors = [0.5, 0.5]
+    print("GAUSSIAN CLASSIFICATION \n")
+    priors = [0.5, 0.5]
     #priors = [0.33, 0.67]
     
 
-    #print("PCA PROCESSED DATA")
-    #g.gaussian_classifiers(priors, DTR_p, LTR, DTE_p, LTE)
-
-    #print("HANNES PCA")
-    #g.gaussian_classifiers(priors, DTR_p0, LTR, DTE_p0, LTE)
+    print("PCA PROCESSED DATA")
+    g.gaussian_classifiers(priors, DTR_p, LTR, DTE_p, LTE)
 
     #print("UNPROCESSED DATA")
     #g.gaussian_classifiers(priors, DTR, LTR, DTE, LTE)
 
-    #print("GAUSSIANIZED DATA")
-    #g.gaussian_classifiers(priors, DTR_g, LTR, DTE_g, LTE)
+    print("GAUSSIANIZED DATA")
+    g.gaussian_classifiers(priors, DTR_gp, LTR, DTE_gp, LTE)
 
     #---------------------------------------Mixed Model Gaussian Classifier-----------------------------------------------------
 

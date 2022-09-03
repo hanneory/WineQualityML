@@ -1,17 +1,11 @@
-import numpy
+import numpy as np
 from matplotlib.axis import XTick
 import matplotlib.pyplot as plt
-from sklearn import preprocessing 
 import preprocessing as p
 
 import pandas as pd
 import seaborn as sb
 
-def mcol(v):
-    return v.reshape((v.size, 1))
-
-def mrow(v):
-    return v.reshape((1, v.size))
 
 def plot_hist(D, L):
     D0 = D[:, L == 0]
@@ -157,4 +151,12 @@ def plot_scatter(D, L):
             #plt.savefig('scatter_%d_%d.pdf' % (dIdx1, dIdx2))
         plt.show()
 
+def accuracy(LTE, Lpred):
+    return (1 - (np.sum(LTE==Lpred) / len(LTE)))*100
 
+#change to column-vector
+def mcol(v):
+    return v.reshape((v.size, 1))
+
+def mrow(v):
+    return v.reshape((1, v.size))

@@ -1,16 +1,11 @@
 import numpy
 import scipy.linalg
 import pylab
-import matplotlib.pyplot as plt
-
-# Goal: implement Linear Discriminant Analysis
-def vcol(V):
-    return V.reshape((V.size, 1))
-
+import support_functions as sf
 
 def empirical_covariance(X):
         print(X)
-        mu = vcol(X.mean(1))
+        mu = sf.mcol(X.mean(1))
         print(mu)
         cov = numpy.dot((X-mu),(X-mu).T)/X.shape[1]
         return cov
@@ -33,7 +28,7 @@ def between_class_covariance(X, L):
     muTotal = X.mean(1)
     for i in set(list(L)):
         D = X[:, L == i]
-        muClass = vcol(D.mean(1))
+        muClass = sf.mcol(D.mean(1))
         SB += D.shape[1] * numpy.dot( (muClass - muTotal), (muClass - muTotal).T )
 
     # D.shape is num of samples in class

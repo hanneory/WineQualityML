@@ -1,10 +1,6 @@
 import numpy as np
 import scipy.optimize as sc
-import sklearn.datasets
-
-#change to column-vector
-def mcol(v):
-    return v.reshape((v.size, 1))
+import support_functions as sp
 
 # l = lambda
 # returns the objective of the function
@@ -17,7 +13,7 @@ def logreg_obj_wrap(DTR, LTR, l):
     Z = LTR * 2.0 - 1.0
     M = DTR.shape[0]
     def logreg_obj(v):      # v packs w_b
-        w = mcol(v[0:M])
+        w = sp.mcol(v[0:M])
         b = v[-1]
         
         #this is the exponential inside J -> (w.T*xi + b)
@@ -26,10 +22,6 @@ def logreg_obj_wrap(DTR, LTR, l):
         #regulizer
         return cxe + 0.5*l*np.linalg.norm(w)**2
     return logreg_obj
-
-
-def accuracy(LTE, Lpred):
-    return (1 - (np.sum(LTE==Lpred) / len(LTE)))*100
 
 
 def log_reg_classifier(DTR, LTR, DTE, LTE, l):
@@ -48,4 +40,4 @@ def log_reg_classifier(DTR, LTR, DTE, LTE, l):
                 LP = np.append(LP, False)
         
         print("Logistic Regression with lambda =", lamb)
-        print("Error rate: ", accuracy(LTE, LP), "% \n")
+        print("Error rate: ", sp.accuracy(LTE, LP), "% \n")

@@ -1,33 +1,26 @@
 from distutils.debug import DEBUG
 import scipy
 import numpy as np
-
-def vcol(V):
-    return V.reshape((V.size, 1))
-
-def vrow(V):
-    return V.reshape((1, V.size))
-
+import support_functions as sp
 
 # LAB SPESIFIC FUNCTIONS
 def empirical_mean(X):
-    return vcol(X.mean(1))
+    return sp.mcol(X.mean(1))
 
 def empirical_covariance(X):
         
-        mu = vcol(X.mean(1))
-        xc = X - vcol(mu)
+        mu = sp.mcol(X.mean(1))
+        xc = X - sp.mcol(mu)
         xcxct = np.dot(xc, xc.T)  / X.shape[1]
     
         return xcxct
-
 
 def logpdf_GAU_ND(X, mu, C):
     P = np.linalg.inv(C)
     return -0.5*X.shape[0]*np.log(np.pi*2) + 0.5*np.linalg.slogdet(P)[1] - 0.5*(np.dot(P, (X-mu))*(X-mu)).sum(0)
 
 def ML_GAU(D):
-    mu = vcol(D.mean(1))
+    mu = sp.mcol(D.mean(1))
     C = np.dot(D-mu, (D-mu).T)/float(D.shape[1])
     return mu, C
 
@@ -46,12 +39,14 @@ def within_class_covariance(D, L):
 def GAU(priors, D_train, L_train, D_test, L_test):
     h = {}
 
+    print(D_train.shape)
+
     for i in [0, 1]:
         DX = D_train[:, L_train == i]
         mu, C = ML_GAU(DX)
         h[i] = (mu, C)
 
-    #we now have one table for each class
+        print(DX)
 
     SJoint = np.zeros((2, D_test.shape[1]))
     logSJoint = np.zeros((2, D_test.shape[1]))
@@ -67,19 +62,17 @@ def GAU(priors, D_train, L_train, D_test, L_test):
     SMarginal = SJoint.sum(0)
     logSMarginal = scipy.special.logsumexp(logSJoint, axis=0)
 
-    Post1 = SJoint / vrow(SMarginal)
+    Post1 = SJoint / sp.mrow(SMarginal)
     #not log
-    logPost = logSJoint - vrow(logSMarginal)
+    logPost = logSJoint - sp.mrow(logSMarginal)
     Post2 = np.exp(logPost)
     #log
 
-    #print this
     LPred1 = Post1.argmax(axis=0)
-    accuracy = (L_test == LPred1).sum() / L_test.size
-    errors = 1 - accuracy
+    print(LPred1)
 
     print("MULTIVARIANT GAUSSIAN CLASSIFIER")
-    print("Accuracy: ", accuracy*100, "%")
+    print("Accuracy: ", sp.accuracy(L_test, LPred1), "%")
     print("")
 
 
@@ -108,19 +101,17 @@ def GAU_DIAG(priors, D_train, L_train, D_test, L_test):
     SMarginal = SJoint.sum(0)
     logSMarginal = scipy.special.logsumexp(logSJoint, axis=0)
 
-    Post1 = SJoint / vrow(SMarginal)
+    Post1 = SJoint / sp.mrow(SMarginal)
     #not log
-    logPost = logSJoint - vrow(logSMarginal)
+    logPost = logSJoint - sp.mrow(logSMarginal)
     Post2 = np.exp(logPost)
     #log
 
     #print this
     LPred1 = Post1.argmax(axis=0)
-    accuracy = (L_test == LPred1).sum() / L_test.size
-    errors = 1 - accuracy
 
     print("NAIVE BAYES GAUSSIAN CLASSIFIER")
-    print("Accuracy: ", accuracy*100, "%")
+    print("Accuracy: ", sp.accuracy(L_test, LPred1), "%")
     print("")
 
 
@@ -151,19 +142,17 @@ def GAU_TC(priors, D_train, L_train, D_test, L_test):
     SMarginal = SJoint.sum(0)
     logSMarginal = scipy.special.logsumexp(logSJoint, axis=0)
 
-    Post1 = SJoint / vrow(SMarginal)
+    Post1 = SJoint / sp.mrow(SMarginal)
     #not log
-    logPost = logSJoint - vrow(logSMarginal)
+    logPost = logSJoint - sp.mrow(logSMarginal)
     Post2 = np.exp(logPost)
     #log
 
     #print this
     LPred1 = Post1.argmax(axis=0)
-    accuracy = (L_test == LPred1).sum() / L_test.size
-    errors = 1 - accuracy
 
     print("TIED COVARIANCE GAUSSIAN CLASSIFIER")
-    print("Accuracy: ", accuracy*100, "%")
+    print("Accuracy: ", sp.accuracy(L_test, LPred1), "%")
     print("")
 
 
@@ -195,19 +184,17 @@ def GAU_TC_DIAG(priors, D_train, L_train, D_test, L_test):
     SMarginal = SJoint.sum(0)
     logSMarginal = scipy.special.logsumexp(logSJoint, axis=0)
 
-    Post1 = SJoint / vrow(SMarginal)
+    Post1 = SJoint / sp.mrow(SMarginal)
     #not log
-    logPost = logSJoint - vrow(logSMarginal)
+    logPost = logSJoint - sp.mrow(logSMarginal)
     Post2 = np.exp(logPost)
     #log
 
-    #print this
     LPred1 = Post1.argmax(axis=0)
-    accuracy = (L_test == LPred1).sum() / L_test.size
-    errors = 1 - accuracy
+
 
     print("TIED COVARIANCE DIAGNOAL GAUSSIAN CLASSIFIER")
-    print("Accuracy: ", accuracy*100, "%")
+    print("Accuracy: ", sp.accuracy(L_test, LPred1), "%")
     print("")
 
    
