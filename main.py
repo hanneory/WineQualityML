@@ -19,12 +19,7 @@
 #https://towardsdatascience.com/predicting-wine-quality-with-several-classification-techniques-179038ea6434
 
 import numpy
-import matplotlib
-import scipy.linalg
-import scipy.optimize
-import sys
 import matplotlib.pyplot as plt
-import sklearn
 import pandas as pd
 import seaborn as sb
 
@@ -35,6 +30,7 @@ import SVM as s
 import GAU as g
 import support_functions as sf
 import preprocessing as p
+import performance as pf
 
 
 
@@ -88,8 +84,8 @@ if __name__ == '__main__':
     # DTR, LTR = shuffle(D_train, L_train)
 
     # ZERO-VALUE HANDLING
-    DTR = p.zero_values(DTR)
-    DTE = p.zero_values(DTE)
+    #DTR = p.zero_values(DTR)
+    #DTE = p.zero_values(DTE)
 
     # GAUSSIANIZATION
     DTR_g, DTE_g = p.gaussianize(DTR, DTE)
@@ -103,66 +99,91 @@ if __name__ == '__main__':
     #nFolds = 3
     #DTR_s = numpy.array_split(DTR, nFolds, axis=1)
     #LTR_s = numpy.array_split(LTR, nFolds)
-    #--------------------------------------------------PCA----------------------------------------------------------------------
-    
-    # define dimension wanted to reduce to
-    dim = 10
 
-    # UNPROCESSED PCA
-    DTR_p = p.pca(DTR, dim)
-    #DTR_p = DTR_p[0]
-    DTE_p = p.pca(DTE, dim)
-    #DTE_p = DTE_p[0]
-
-    # GRASSIANIZED PCA
-    DTR_gp = p.pca(DTR_g, dim)
-    DTE_gp = p.pca(DTE_g, dim)
 
     #---------------------------------------------Logistic regression-----------------------------------------------------------
     
     #print("LOGISITC REGRESSION CLASSIFICATION")
+    #print("*************************************")
 
-    #lamb = [1e-6, 1e-3, 0.1, 1.0, 2.0 , 10.0]
+    #lamb = [1e-6, 1e-3, 0.1, 1.0, 10]
     #l.log_reg_classifier(DTR, LTR, DTE, LTE, lamb)
 
     #-------------------------------------- Multivariate Gaussian Classifier----------------------------------------------------
     
-    print("GAUSSIAN CLASSIFICATION \n")
-    priors = [0.5, 0.5]
-    #priors = [0.33, 0.67]
+    #print("GAUSSIAN CLASSIFICATION \n")
+    #print("**********************************")
+
     
+    #LPred_GAU = g.gaussian_classifiers("MV",priors, DTR, LTR, DTE, LTE)
+    #TODO Create a array of labels and plot all together
+    #pf.plot_performance(LPred_GAU , LTE)
+    #pf.ROC_plot(LPred_GAU, LTE)
 
-    print("PCA PROCESSED DATA")
-    g.gaussian_classifiers(priors, DTR_p, LTR, DTE_p, LTE)
+    #minDCF5 = pf.compute_min_DCF(LPred_GAU, LTE, 0.5, 1, 1)
+    #print(minDCF5)
 
-    #print("UNPROCESSED DATA")
-    #g.gaussian_classifiers(priors, DTR, LTR, DTE, LTE)
+    #p.plot_minDCF("LogReg", "Lambda", l, minDCF[0], minDCF[1], minDCF[2])
 
-    print("GAUSSIANIZED DATA")
-    g.gaussian_classifiers(priors, DTR_gp, LTR, DTE_gp, LTE)
+    
+    #LPred_GAU = []
+    #print("NON-GAUSSIANIZED DATA \n")
+    #print("----------------------------------")
+    #print("RAW DATA")
+    #g.gaussian_classifiers(DTR, LTR, DTE, LTE)
 
+    #for dim in [10, 9, 8]:
+    #    DTR_p = p.pca(DTR, dim)
+    #    DTE_p = p.pca(DTE, dim)
+
+    #    print("NR. OF DIMENSIONS IN FEATURE SPACE %d" % dim)
+    #    LPred_GAU = g.gaussian_classifiers(DTR_p, LTR, DTE_p, LTE)
+
+
+    
+    #print("GAUSSIANIZED DATA")
+    #print("----------------------------------")
+    #print("RAW DATA")
+    #g.gaussian_classifiers(DTR_g, LTR, DTE_g, LTE)
+    
+    #for dim in [10, 9, 8]:
+    #    DTR_pg = p.pca(DTR_g, dim)
+    #    DTE_pg = p.pca(DTE_g, dim)
+
+    #    print("NR. OF DIMENSIONS IN FEATURE SPACE %d" % dim)
+    #    g.gaussian_classifiers(DTR_pg, LTR, DTE_pg, LTE)
+    
+    
     #---------------------------------------Mixed Model Gaussian Classifier-----------------------------------------------------
 
     #print("MIXED MODEL GAUSSIAN CLASSIFICATION")
 
-    #-------------------------------------------------LDA-----------------------------------------------------------------------
-    
-    #print("LDA CLASSIFICATION")
-
-    #lda.LDA(D_train,L_train)
 
     #-------------------------------------- Support Vector Machine ----------------------------------------------------
 
-    #clf = s.SVM()
-    #clf.fit(D_train, L_train)
-    #predictions = clf.predict(L_train)
+    print("SUPPORT VECTOR MACHINE")
+    print("**********************************\n")
 
-    #def accuracy(y_true, y_pred):
-    #    accuracy = numpy.sum(y_true==y_pred) / len(y_true)
-    #    return accuracy*100
+    C = 0.01
+    K = 1
 
-    #print("Support Vector Machine")
-    #print("Accuracy: ", accuracy(L_test, predictions), "%")
+    print("LINEAR SVM")
+    clf_lin = s.SVM()
+    clf_lin.SVM_linear(DTR, LTR, C, K)
+    S_lin, LP_lin = clf_lin.predict_lin(DTE)
+
+    minDCF = pf.compute_min_DCF(S_lin, LTE, 0.5, 1, 1)
+    print("Error:", sf.accuracy_SVM(LTE, LP_lin), "%")
+    print(minDCF)
+
+    print("KERNEL SVM")
+    clf_RBF = s.SVM()
+    clf_RBF.SVM_RBF(DTR, LTR, C,-2, K)
+    S_RBF, LP_RBF = clf_RBF.predict_RBF(DTE)
+    minDCF = pf.compute_min_DCF(S_RBF, LTE, 0.5, 1, 1)
+    print("Error:", sf.accuracy_SVM(LTE, LP_RBF), "%")
+    print(minDCF)
+
 
 
 

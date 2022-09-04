@@ -10,6 +10,7 @@
 import support_functions as sp
 import numpy as np
 import scipy.optimize
+from itertools import repeat
 
 #often useful to centralize the data and normalize the variance
 #has no probabilistic interpretation - either postprosess or use validation set.
@@ -21,147 +22,128 @@ import scipy.optimize
 
 #to add the kernel we change the claculation of xi*xj, here denoted H to be K(xi*xj)
 
-def SVM_linear(DTR, LTR, C, K = 1):
-    #this simulates the effect of a bias
-    DTREXT = np.vstack([DTR, np.ones((1, DTR.shape[1]))*K])
-
-    Z = np.zeros(LTR.shape)
-    Z[LTR == 1] = 1
-    Z[LTR == 0] = -1
-
-    # LINEAR
-    #H = np.dot(DTREXT.T, DTREXT)
-    #Dist = sp.mcol((DTR ** 2).sum(0)) + sp.mrow((DTR**2).sum(0)) - 2 * np.dot(DTR.T, DTR)
-    #H = np.exp(-gamma*Dist)
-
-    # KERNEL
-    Dist = np.zeros(DTR.shape[0], DTR.shape[0])
-    for i in range(DTR.shape[0]):
-        for j in range(DTR.shape[1]):
-            xi = DTR[:, i]
-            xj = DTR[:, j]
-            Dist[i, j] = np.linalg.norm(xi-xj)**2
-    H = np.exp(-gamma*Dist) + K # adding K to compensate for bias
-
-    #to get zi*zj*H*H.T
-    H = sp.mcol(Z) * sp.mrow(Z) * H
-
-    def JDual(a):
-        Ha = np.dot(H, sp.mcol(a))
-        aHa = np.dot(sp.mrow(a), Ha)
-        al = a.sum()
-        return -0.5 * aHa.ravel() + al, -Ha.ravel() + np.ones(a.size)
-    
-    #optimize instead of minimize
-    def Ldual(a):
-        loss, grad = JDual(a)
-        return -loss, - grad
-
-    def JPrimal(w):
-        S = np.dot(sp.mrow(w), DTREXT)
-        loss = np.maximum(np.zeros(S.shape), 1 - Z * S).sum()
-        return 0.5 * np.linalg.norm(w)**2 + C * loss
-
-    #will comverge
-    #factor should be set to 1
-    aStar, _x, _y = scipy.optimize.fmin_l_bfgs_b(Ldual, np.zeros(DTR.shape[1]), bounds= [(0,C)]*DTR.shape[1], factr= 0.0, maxiter=100000, maxfun=100000)
-    #aStar is the score for the test sample
-
-    print(_x)
-    print(_y)
-
-    wStar = np.dot(DTREXT, sp.mcol(aStar) * sp.mcol(Z))
-
-    print(JPrimal(wStar))
-    print(JDual(aStar)[0])
-
-def SVM_classifier(DTR, LTR, C, K = 1):
-
-    #this simulates the effect of a bias
-    DTREXT = np.vstack([DTR, np.ones((1, DTR.shape[1]))])
-
-    Z = np.zeros(LTR.shape)
-    Z[LTR == 1] = 1
-    Z[LTR == 0] = -1
-
-    Dist = sp.mcol((DTR ** 2).sum(0)) + sp.mrow((DTR**2).sum(0)) - 2 * np.dot(DTR.T, DTR)
-    H = np.exp(-Dist)
-    H = sp.mcol(Z) * sp.mrow(Z) * H
-
-    def JDual(a):
-        Ha = np.dot(H, sp.mcol(a))
-        aHa = np.dot(sp.mrow(a), Ha)
-        al = a.sum()
-        return -0.5 * aHa.ravel() + al, -Ha.ravel() + np.ones(a.size)
-    
-    def Ldual(a):
-        loss, grad = JDual(a)
-        return -loss, - grad
-
-    def JPrimal(w):
-        S = np.dot(sp.mrow(w), DTREXT)
-        loss = np.maximum(np.zeros(S.shape), 1 - Z * S).sum()
-        return 0.5 * np.linalg.norm(w)**2 + C * loss
-
-    #factor should be set to 1
-    aStar, _x, _y = scipy.optimize.fmin_l_bfgs_b(Ldual, np.zeros(DTR.shape[1]), bounds= [(0,C)]*DTR.shape[1], factr= 0.0, maxiter=100000, maxfun=100000)
-    
-    print(_x)
-    print(_y)
-
-    wStar = np.dot(DTREXT, sp.mcol(aStar) * sp.mcol(Z))
-
-    print(JPrimal(wStar))
-    print(JDual(aStar)[0])
-
-    return
-
-
 class SVM:
-    def __init__(self, learning_rate=1e-3, lambda_param=1e-2, n_iters=1000):
-        self.lr = learning_rate
-        self.lambda_param = lambda_param
-        self.n_iters = n_iters
-        self.w = None
-        self.b = None
 
-    def _init_weights_bias(self, X):
-        n_features = X.shape[1]
-        self.w = np.zeros(n_features)
-        self.b = 0
+    def SVM_RBF(self, DTR, LTR, C, gamma, K = 1):
+        #this simulates the effect of a bias
+        DTREXT = np.vstack([DTR, np.ones((1, DTR.shape[1]))*K])
 
-    def _get_cls_map(self, y):
-        return np.where(y <= 0, -1, 1)
+        self.Z = np.zeros(LTR.shape)
+        self.Z[LTR == 1] = 1
+        self.Z[LTR == 0] = -1
 
-    def _satisfy_constraint(self, x, idx):
-        linear_model = np.dot(x, self.w) + self.b 
-        return self.cls_map[idx] * linear_model >= 1
-    
-    def _get_gradients(self, constrain, x, idx):
-        if constrain:
-            dw = self.lambda_param * self.w
-            db = 0
-            return dw, db
+
+        self.DTR = DTR
+        self.LTR = LTR
+        self.K = K
+        self.C = C
+        self.gamma = gamma
+
+        # KERNEL
+        Dist = np.zeros([DTR.shape[1], DTR.shape[1]])
+        for i in range(DTR.shape[1]):
+            for j in range(DTR.shape[1]):
+                xi = DTR[:, i]
+                xj = DTR[:, j]
+                Dist[i, j] = np.linalg.norm(xi-xj)**2
+        H = np.exp(-gamma*Dist) + K # adding K to compensate for bias
+
+        #to get zi*zj*H*H.T
+        H = sp.mcol(self.Z) * sp.mrow(self.Z) * H
+
+        def JDual(a):
+            Ha = np.dot(H, sp.mcol(a))
+            aHa = np.dot(sp.mrow(a), Ha)
+            al = a.sum()
+            return -0.5 * aHa.ravel() + al, -Ha.ravel() + np.ones(a.size)
         
-        dw = self.lambda_param * self.w - np.dot(self.cls_map[idx], x)
-        db = - self.cls_map[idx]
-        return dw, db
-    
-    def _update_weights_bias(self, dw, db):
-        self.w -= self.lr * dw
-        self.b -= self.lr * db
-    
-    def fit(self, X, y):
-        self._init_weights_bias(X)
-        self.cls_map = self._get_cls_map(y)
+        #optimize instead of minimize
+        def Ldual(a):
+            loss, grad = JDual(a)
+            return -loss, - grad
 
-        for _ in range(self.n_iters):
-            for idx, x in enumerate(X):
-                constrain = self._satisfy_constraint(x, idx)
-                dw, db = self._get_gradients(constrain, x, idx)
-                self._update_weights_bias(dw, db)
+        def JPrimal(w):
+            S = np.dot(sp.mrow(w), DTREXT)
+            loss = np.maximum(np.zeros(S.shape), 1 - self.Z * S).sum()
+            return 0.5 * np.linalg.norm(w)**2 + C * loss
+
+        #factor should be set to 1
+        aStar, _x, _y = scipy.optimize.fmin_l_bfgs_b(Ldual, np.zeros(DTR.shape[1]), bounds= [(0,C)]*DTR.shape[1], factr= 0.0, maxiter=100000, maxfun=100000)
+        #aStar is the score for the test sample
+
+        print(_x)
+        print(_y)
+
+        wStar = np.dot(DTREXT, sp.mcol(aStar) * sp.mcol(self.Z))
+        self.w = wStar
+
+        print(JPrimal(wStar))
+        print(JDual(aStar)[0])
+
+
+    def SVM_linear(self, DTR, LTR, C, K = 1):
+
+        #this simulates the effect of a bias
+        DTREXT = np.vstack([DTR, np.ones((1, DTR.shape[1]))])
+
+        Z = np.zeros(LTR.shape)
+        Z[LTR == 1] = 1
+        Z[LTR == 0] = -1
+
+        self.K = K
+        self.C = C
+
+        H = np.dot(DTREXT.T, DTREXT)
+        #Dist = sp.mcol((DTR ** 2).sum(0)) + sp.mrow((DTR**2).sum(0)) - 2 * np.dot(DTR.T, DTR)
+        #H = np.exp(-Dist)
+        H = sp.mcol(Z) * sp.mrow(Z) * H
     
-    def predict(self, X):
-        estimate = np.dot(X, self.w) + self.b
-        prediction = np.sign(estimate)
-        return np.where(prediction == -1, 0, 1)
+
+        def JDual(a):
+            Ha = np.dot(H, sp.mcol(a))
+            aHa = np.dot(sp.mrow(a), Ha)
+            al = a.sum()
+            return -0.5 * aHa.ravel() + al, -Ha.ravel() + np.ones(a.size)
+        
+        def Ldual(a):
+            loss, grad = JDual(a)
+            return -loss, - grad
+
+        def JPrimal(w):
+            S = np.dot(sp.mrow(w), DTREXT)
+            loss = np.maximum(np.zeros(S.shape), 1 - Z * S).sum()
+            return 0.5 * np.linalg.norm(w)**2 + C * loss
+
+        #factor should be set to 1
+        aStar, _x, _y = scipy.optimize.fmin_l_bfgs_b(Ldual, np.zeros(DTR.shape[1]), bounds= [(0,C)]*DTR.shape[1], factr= 0.0, maxiter=100000, maxfun=100000)
+        
+        #print("_x", _x)
+        #print("_y", _y)
+
+        wStar = np.dot(DTREXT, sp.mcol(aStar) * sp.mcol(Z))
+
+        self.w = wStar
+
+        return
+
+    def predict_lin(self, DTE):
+        DTE = np.vstack([DTE, np.zeros(DTE.shape[1])+self.K])
+        S = np.dot(self.w.T, DTE)
+        LP = 1*(S > 0)
+        LP[LP == 0] = -1
+             
+
+        #print("Score: ", S)
+        #print("LP: ", LP)
+        return S, LP
+
+    def predict_RBF(self, DTE):
+        H = np.zeros((self.DTR.shape[0], DTE.shape[0]))
+        for i in range(self.DTR.shape[0]):
+            for j in range(DTE.shape[0]):
+                H[i,j]=np.exp(-self.gamma*(np.linalg.norm(self.DTR[:,i]-self.DTR[:,j])**2))+self.K**2
+        S=np.sum(np.dot((self.w*self.LTR).reshape(1, self.DTR.shape[1]), H), axis=0)
+        LP = 1*(S > 0)
+        LP[LP == 0] = -1  
+        return S, LP
+

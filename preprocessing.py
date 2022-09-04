@@ -9,12 +9,13 @@ import support_functions as sp
 
 def pca(D, dim):
     DC = D - empirical_mean(D)
-    C = numpy.dot(DC, DC.T) / float(D.shape[1])
+    C = numpy.dot(DC, DC.T) / float(DC.shape[1])
+    
     _, U = numpy.linalg.eigh(C)
    
     #select larges eigenvalues
     P = U[:, ::-1][:, 0:dim]
-    DP = numpy.dot(P.T, D)
+    DP = numpy.dot(P.T, DC)
 
     return DP
 
