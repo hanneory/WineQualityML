@@ -154,9 +154,6 @@ def plot_scatter(D, L):
 def accuracy(LTE, Lpred):
     return (1 - (np.sum(LTE==Lpred) / len(LTE)))*100
 
-def accuracy_SVM(y_true, y_pred):
-    accuracy = np.sum(y_true==y_pred) / len(y_true)
-    return (1 - accuracy)*100
 
 #change to column-vector
 def mcol(v):

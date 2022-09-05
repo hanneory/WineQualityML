@@ -18,6 +18,7 @@
 
 #https://towardsdatascience.com/predicting-wine-quality-with-several-classification-techniques-179038ea6434
 
+from ctypes.wintypes import LPRECT
 import numpy
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -29,18 +30,9 @@ import LR as l
 import SVM as s
 import GAU as g
 import support_functions as sf
-import preprocessing as p
+import preprocessing as pp
 import performance as pf
 
-
-
-def shuffle(D, L):
-    #rearrange samples
-    i = numpy.random.permutation(D.shape[1])
-    D = D[:, i]
-    L = L[:, i]
-
-    return D, L
 
 
 #load file and and changes row and column. Can't get sklearn to work on mac. 
@@ -60,6 +52,158 @@ def load(fname):
                 pass
     return numpy.hstack(DList), numpy.array(labelList, dtype = numpy.int32) #Liste med vectors som eg stacke horisontalt som vil gi meg ei matrise. Har også list of labels som lager label-array.
 
+def shuffle(D, L):
+    numpy.random.seed(0)
+    i = numpy.random.permutation(D.shape[1])
+    return D[:, i], L[i]
+
+
+def kFold(D, L, nFolds, modelName, version = None):
+    S = []
+    D_sets = numpy.array_split(D, nFolds, axis=1)
+    L_sets = numpy.array_split(L, nFolds)
+    LPred = []
+    L = []
+
+    #for MVG
+    LP_GAU5 = []
+    LP_GAU3 = []
+    LP_GAU7 = []
+    lbls = ["raw", "raw gauss"]
+    dims = [10, 9, 8]
+    for i in range(len(dims)):
+        lbls.append("dim %d" % dims[i])
+    
+    #for LR
+    lamb = [1e-6, 1e-3, 0.1]
+
+    #for SVM
+    C = [0.01, 0.1, 1]
+    K = 1
+    gamma = [-2, -1]
+    c = [1, 2]
+    d = [1, 2]
+
+    for i in range(nFolds):
+        DTR, LTR = numpy.hstack(D_sets[:i] + D_sets[i+1:]), numpy.hstack(L_sets[:i] + L_sets[i+1:])
+        DTE, LTE = numpy.asanyarray(D_sets[i]), numpy.asanyarray(L_sets[i])
+
+        #run model
+        if modelName == "MVG":
+            i = 0
+
+            LP5, LP3, LP7 = g.gaussian_classifiers(version, DTR, LTR, DTE, LTE)
+            LP_GAU5.append(LP5)
+            LP_GAU3.append(LP3)
+            LP_GAU7.append(LP7)
+            L.append(LTE)
+            i += 1
+            
+            DTR_g, DTE_g = pp.gaussianize(DTR, DTE)
+            LP5, LP3, LP7 = g.gaussian_classifiers(version, DTR_g, LTR, DTE_g, LTE)
+            LP_GAU5.append(LP5)
+            LP_GAU3.append(LP3)
+            LP_GAU7.append(LP7)
+            L.append(LTE)
+            i += 1
+            
+            for _dim in dims:
+                DTR_pg = pp.pca(DTR_g, _dim)
+                DTE_pg = pp.pca(DTE_g, _dim)
+
+                LP5, LP3, LP7 = g.gaussian_classifiers(version, DTR_pg, LTR, DTE_pg, LTE)
+                LP_GAU5.append(LP5)
+                LP_GAU3.append(LP3)
+                LP_GAU7.append(LP7)
+                L.append(LTE)
+
+        elif modelName == "LR":
+            print("Running fold", i)
+            if version == ("RAW" or None):
+                LPred.append(l.log_reg_classifier(DTR, LTR, DTE, LTE, lamb))
+                L.append(LTE)
+            
+            if version == "GAUS":
+                DTR_g, DTE_g = pp.gaussianize(DTR, DTE)
+                LPred.append(l.log_reg_classifier(DTR_g, LTR, DTE_g, LTE, lamb))
+                L.append(LTE)
+        
+        elif modelName == "SVM":
+
+            print("Running fold", i)
+            
+            if version == ("LIN" or None):
+                LP = s.SVM_linear_classifier(DTR, LTR, DTE, C, K)
+                LPred.append(LP)
+                L.append(LTE)
+            
+            if version == ("POLY"):
+                s.SVM_poly_classifier(DTR, LTR, DTE, LTE, C, K, c, d)
+
+            if version == ("RBF"):
+                s.SVM_RBF_classifier(DTR, LTR, DTE, LTE, C, K, c, gamma)
+
+            
+        elif modelName == "GMM":
+
+            continue
+
+    
+    if modelName == "MVG":
+        print("minDCF for:" , version)
+        for i in range((len(dims)+2)):     
+            minDCF5 = pf.compute_min_DCF(numpy.hstack(LP_GAU5[i::(len(dims)+2)]), numpy.hstack(L[i::(len(dims)+2)]), 0.5, 1, 1)
+            minDCF3 = pf.compute_min_DCF(numpy.hstack(LP_GAU3[i::(len(dims)+2)]), numpy.hstack(L[i::(len(dims)+2)]), 0.5, 1, 1)
+            minDCF7 = pf.compute_min_DCF(numpy.hstack(LP_GAU7[i::(len(dims)+2)]), numpy.hstack(L[i::(len(dims)+2)]), 0.5, 1, 1)
+            # unbalanced priors has been taken into account at classification
+            print("minDCF for",lbls[i], "minDCF5: ", round(minDCF5,3), "minDCF3", round(minDCF3, 3), "minDCF7", round(minDCF7,3))
+
+    if modelName == "LR":
+        lst = []
+        minDCF5A = []
+        minDCF3A = []
+        minDCF7A = []
+        for i in range(len(lamb)):
+            for j in range(len(LPred)):
+                lst.append(LPred[j][i])
+
+            minDCF5 = pf.compute_min_DCF(numpy.hstack(lst), numpy.hstack(L), 0.5, 1, 1)
+            minDCF3 = pf.compute_min_DCF(numpy.hstack(lst), numpy.hstack(L), 0.3, 1, 1)
+            minDCF7 = pf.compute_min_DCF(numpy.hstack(lst), numpy.hstack(L), 0.7, 1, 1)
+            print("                       pi:  0.5   0.3   0.7")
+            print("minDCF for lamb =", lamb[i],":", round(minDCF5, 3)," ", round(minDCF3,3)," ", round(minDCF7, 3))
+
+            minDCF3A.append(minDCF3)
+            minDCF5A.append(minDCF5)
+            minDCF7A.append(minDCF7)
+            lst = []
+        pf.plot_minDCF("SVM Linear", "lambda", lamb, minDCF5A, minDCF3A, minDCF7A)
+
+
+    if modelName == "SVM":
+        lst = []
+        minDCF3A = []
+        minDCF5A = []
+        minDCF7A = []
+        if version == ("LIN" or None):
+            for i in range(len(C)):
+                for j in range(len(LPred)):
+                    lst.append(LPred[j][i])
+
+                minDCF5 = pf.compute_min_DCF(numpy.hstack(lst), numpy.hstack(L), 0.5, 1, 1)
+                minDCF3 = pf.compute_min_DCF(numpy.hstack(lst), numpy.hstack(L), 0.3, 1, 1)
+                minDCF7 = pf.compute_min_DCF(numpy.hstack(lst), numpy.hstack(L), 0.7, 1, 1)
+                minDCF3A.append(minDCF3)
+                minDCF5A.append(minDCF5)
+                minDCF7A.append(minDCF7)
+                print("minDCF for C =", C[i])
+                print("minDCF5: ", minDCF5, "minDCF1: ", minDCF3, "minDCF9", minDCF7)
+                lst = []
+                
+            pf.plot_minDCF("SVM Linear", "C", C, minDCF5A, minDCF3A, minDCF7A)
+            
+
+
 if __name__ == '__main__':
 
     #--------------------------------------------------LOAD DATA----------------------------------------------------------------
@@ -67,7 +211,6 @@ if __name__ == '__main__':
     D_train, L_train = load('Data/Train.txt')
     D_test, L_test = load('Data/Test.txt')
 
-    #D_train = numpy.random.shuffle(D_train)
 
     #------------------------------------------------VISUALIZATION--------------------------------------------------------------
     
@@ -75,85 +218,29 @@ if __name__ == '__main__':
     #sf.plot_gaus(DTR, LTR, DTE, LTE)
     #sf.plot_general_data()
 
-    #------------------------------------------------PREPROCESSING--------------------------------------------------------------
-    
-    # DTR and LTR are training data and labels, DTE and LTE are evaluation data and labels
-    (DTR, LTR), (DTE, LTE) = p.split_db_2to1(D_train, L_train)
-
-    # SHUFFLE DATASET
-    # DTR, LTR = shuffle(D_train, L_train)
-
-    # ZERO-VALUE HANDLING
-    #DTR = p.zero_values(DTR)
-    #DTE = p.zero_values(DTE)
-
-    # GAUSSIANIZATION
-    DTR_g, DTE_g = p.gaussianize(DTR, DTE)
-
-    # SPLIT INTO X FOLDS GAUSSIANIZED
-    #nFolds = 3
-    #DTR_sg = numpy.array_split(DTR_g, nFolds, axis=1)
-    #LTR_sg = numpy.array_split(LTR_g, nFolds)
-
-    # SPLIT INTO X FOLDS RAW
-    #nFolds = 3
-    #DTR_s = numpy.array_split(DTR, nFolds, axis=1)
-    #LTR_s = numpy.array_split(LTR, nFolds)
-
 
     #---------------------------------------------Logistic regression-----------------------------------------------------------
     
     #print("LOGISITC REGRESSION CLASSIFICATION")
     #print("*************************************")
 
-    #lamb = [1e-6, 1e-3, 0.1, 1.0, 10]
-    #l.log_reg_classifier(DTR, LTR, DTE, LTE, lamb)
+    print("RAW DATA")
+    kFold(D_train, L_train, 5, "LR", "RAW")
 
-    #-------------------------------------- Multivariate Gaussian Classifier----------------------------------------------------
+    print("GAUSSIANIZED DATA")
+    kFold(D_train, L_train, 5, "LR", "GAUS")
+
+    #----------------------------------------------------MVG-----------------------------------------------------------
     
-    #print("GAUSSIAN CLASSIFICATION \n")
-    #print("**********************************")
+    #print("MULTIVARIANT GAUSSIAN CLASSIFICATION")
+    #print("*************************************")
 
-    
-    #LPred_GAU = g.gaussian_classifiers("MV",priors, DTR, LTR, DTE, LTE)
-    #TODO Create a array of labels and plot all together
-    #pf.plot_performance(LPred_GAU , LTE)
-    #pf.ROC_plot(LPred_GAU, LTE)
-
-    #minDCF5 = pf.compute_min_DCF(LPred_GAU, LTE, 0.5, 1, 1)
-    #print(minDCF5)
-
-    #p.plot_minDCF("LogReg", "Lambda", l, minDCF[0], minDCF[1], minDCF[2])
-
-    
-    #LPred_GAU = []
-    #print("NON-GAUSSIANIZED DATA \n")
-    #print("----------------------------------")
-    #print("RAW DATA")
-    #g.gaussian_classifiers(DTR, LTR, DTE, LTE)
-
-    #for dim in [10, 9, 8]:
-    #    DTR_p = p.pca(DTR, dim)
-    #    DTE_p = p.pca(DTE, dim)
-
-    #    print("NR. OF DIMENSIONS IN FEATURE SPACE %d" % dim)
-    #    LPred_GAU = g.gaussian_classifiers(DTR_p, LTR, DTE_p, LTE)
+    #kFold(D_train, L_train, 5, "MVG", "FULL")
+    #kFold(D_train, L_train, 5, "MVG", "DIAG")
+    #kFold(D_train, L_train, 5, "MVG", "TC")
+    #kFold(D_train, L_train, 5, "MVG", "DIAG_TC")
 
 
-    
-    #print("GAUSSIANIZED DATA")
-    #print("----------------------------------")
-    #print("RAW DATA")
-    #g.gaussian_classifiers(DTR_g, LTR, DTE_g, LTE)
-    
-    #for dim in [10, 9, 8]:
-    #    DTR_pg = p.pca(DTR_g, dim)
-    #    DTE_pg = p.pca(DTE_g, dim)
-
-    #    print("NR. OF DIMENSIONS IN FEATURE SPACE %d" % dim)
-    #    g.gaussian_classifiers(DTR_pg, LTR, DTE_pg, LTE)
-    
-    
     #---------------------------------------Mixed Model Gaussian Classifier-----------------------------------------------------
 
     #print("MIXED MODEL GAUSSIAN CLASSIFICATION")
@@ -161,30 +248,16 @@ if __name__ == '__main__':
 
     #-------------------------------------- Support Vector Machine ----------------------------------------------------
 
-    print("SUPPORT VECTOR MACHINE")
-    print("**********************************\n")
+    #print("SUPPORT VECTOR MACHINE")
+    #print("**********************************\n")
 
-    C = 0.01
-    K = 1
+    #kFold(D_train, L_train, 5, "SVM", "LIN")
+    #kFold(D_train, L_train, 5, "SVM", "POLY")
+    #kFold(D_train, L_train, 5, "SVM", "RBF")
 
-    print("LINEAR SVM")
-    clf_lin = s.SVM()
-    clf_lin.SVM_linear(DTR, LTR, C, K)
-    S_lin, LP_lin = clf_lin.predict_lin(DTE)
-
-    minDCF = pf.compute_min_DCF(S_lin, LTE, 0.5, 1, 1)
-    print("Error:", sf.accuracy_SVM(LTE, LP_lin), "%")
-    print(minDCF)
-
-    print("KERNEL SVM")
-    clf_RBF = s.SVM()
-    clf_RBF.SVM_RBF(DTR, LTR, C,-2, K)
-    S_RBF, LP_RBF = clf_RBF.predict_RBF(DTE)
-    minDCF = pf.compute_min_DCF(S_RBF, LTE, 0.5, 1, 1)
-    print("Error:", sf.accuracy_SVM(LTE, LP_RBF), "%")
-    print(minDCF)
-
-
+    #s.SVM_linear_classifier(DTR, LTR, DTE, LTE, C, K)
+    #s.SVM_RBF_classifier(DTR, LTR, DTE, LTE, C, K, gamma)
+    #s.SVM_poly_classifier(DTR, LTR, DTE, LTE, C, K, c, d)
 
 
     

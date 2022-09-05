@@ -14,8 +14,9 @@ import pylab
 # so they can be computed once in a separate function
 # THIS IS F
 def logreg_obj_wrap(DTR, LTR, l):
-    Z = LTR * 2.0 - 1.0
+    Z = (LTR * 2.0) - 1.0
     M = DTR.shape[0]
+
     def logreg_obj(v):      # v packs w_b
         w = sp.mcol(v[0:M])
         b = v[-1]
@@ -30,8 +31,8 @@ def logreg_obj_wrap(DTR, LTR, l):
 
 def log_reg_classifier(DTR, LTR, DTE, LTE, l):
     #iterate through a predefined set of lambda values
-    minDCF = np.zeros([3, len(l)])
-    i = 0
+    LPred = []
+
     for lamb in l:
         logreg_obj = logreg_obj_wrap(DTR, LTR, lamb)
         _v, _J, _d = sc.fmin_l_bfgs_b(logreg_obj, np.zeros(DTR.shape[1]), approx_grad=True)
@@ -44,25 +45,10 @@ def log_reg_classifier(DTR, LTR, DTE, LTE, l):
                 LP = np.append(LP, True)
             else:
                 LP = np.append(LP, False)
-        
-        print("Logistic Regression with lambda =", lamb)
-        print("Error rate: ", sp.accuracy(LTE, LP), "% \n")
 
-        #minDCF5 = p.compute_min_DCF(STE, LTE, 0.5, 1, 1)
-        #minDCF9 = p.compute_min_DCF(STE, LTE, 0.9, 1, 1)
-        #minDCF1 = p.compute_min_DCF(STE, LTE, 0.1, 1, 1)
-
-        #print(minDCF5)
-        #print(minDCF1)
-        #print(minDCF9)
-
-        #minDCF[0, i] = minDCF5
-        #minDCF[1, i] = minDCF9
-        #minDCF[2, i] = minDCF1
-
-        i += 1
-    
-    p.plot_minDCF("LogReg", "Lambda", l, minDCF[0], minDCF[1], minDCF[2])
+        LPred.append(LP)
+    #return for every l
+    return LPred
         
         
 

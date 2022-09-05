@@ -2,6 +2,7 @@ from distutils.debug import DEBUG
 import scipy
 import numpy as np
 import support_functions as sp
+import performance as pf
 
 # LAB SPESIFIC FUNCTIONS
 def empirical_mean(X):
@@ -75,7 +76,7 @@ def GAU(modelName, D_train, L_train, D_test, L_test):
     SJoint = np.zeros((2, D_test.shape[1]))
     logSJoint = np.zeros((2, D_test.shape[1]))
 
-    classPriors = [[0.5, 0.5], [0.9, 0.1], [0.1, 0.9]]
+    classPriors = [[0.5, 0.5], [0.3, 0.7], [0.7, 0.3]]
 
     LPred = {}
     logPost= {}
@@ -91,30 +92,28 @@ def GAU(modelName, D_train, L_train, D_test, L_test):
         SMarginal = SJoint.sum(0)
         logSMarginal = scipy.special.logsumexp(logSJoint, axis=0)
 
-        #uvisst om dette er riktig
-        llr = logSJoint[0, :] - logSJoint[1, :]
-
         Post1 = SJoint / sp.mrow(SMarginal)
         logPost[j] = logSJoint - sp.mrow(logSMarginal)
         
         LPred[j] = Post1.argmax(axis=0)
         j += 1
 
-    
-    print(modelName, "GAUSSIAN CLASSIFIER")
-    print("Priors           0.5       0.9        0.1")
-    print("Error rate:   ",  round(sp.accuracy(L_test, LPred[0]),2), "%   ", round(sp.accuracy(L_test, LPred[1]),2), "%   ", round(sp.accuracy(L_test, LPred[2]),2), "%")
-    print("")
+    return LPred[0], LPred[1], LPred[2]
 
-    return LPred
+    
 
    
-def gaussian_classifiers(D_train, L_train, D_test, L_test):
-    LPred_GAU = GAU("MV",  D_train, L_train, D_test, L_test)
-    LPred_GAU = GAU("DIAG",  D_train, L_train, D_test, L_test)
-    LPred_GAU = GAU("TC",  D_train, L_train, D_test, L_test)
-    LPred_GAU = GAU("DIAG_TC",  D_train, L_train, D_test, L_test)
+def gaussian_classifiers(type, D_train, L_train, D_test, L_test):
+    if type == "FULL":
+        LP_GAU5, LP_GAU1, LP_GAU9  = GAU("MV",  D_train, L_train, D_test, L_test)
+    if type == "DIAG":
+        LP_GAU5, LP_GAU1, LP_GAU9 = GAU("DIAG",  D_train, L_train, D_test, L_test)
+    if type == "TC":
+        LP_GAU5, LP_GAU1, LP_GAU9 = GAU("TC",  D_train, L_train, D_test, L_test)
+    if type == "DIAG_TC":
+        LP_GAU5, LP_GAU1, LP_GAU9 = GAU("DIAG_TC",  D_train, L_train, D_test, L_test)
 
-    return LPred_GAU
+    return LP_GAU5, LP_GAU1, LP_GAU9
+
 
 

@@ -13,6 +13,7 @@ def confusion_matrix(P, L):
 
     return CM
 
+
 # llrs = log likelihood ratios
 # does not tell us where to put the thresholds, 
 # only the tradeoff between the true positive and the
@@ -49,8 +50,8 @@ def assign_labels(S, pi, Cfn, Cfp, th = None):
 # pi is prior for the class
 # Cfn and Cfp is cost of false negatives and false positives
 def emp_Bayes_bin(CM, pi, Cfn, Cfp):
-    fnr = CM[0,1] / CM[0,1] + CM[1,1]
-    fpr = CM[1,0] / CM[0,0] + CM[1,0]
+    fnr = CM[0,1] / (CM[0,1] + CM[1,1])
+    fpr = CM[1,0] / (CM[0,0] + CM[1,0])
     return pi * Cfn * fnr + (1 - pi) * Cfp * fpr
 
 def normalized_emp_Bayes_bin(CM, pi, Cfn, Cfp):
@@ -63,16 +64,18 @@ def compute_act_DCF(S, L, pi, Cfn, Cfp, th = None):
     CM = confusion_matrix(P, L)
     return normalized_emp_Bayes_bin(CM, pi, Cfn, Cfp)
 
+# MINIMAL DETECTION COST FUNCTION
 def compute_min_DCF(S, L, pi, Cfn, Cfp):
     t = np.array(S) 
     t.sort()
-    #t = np.concatenate([np.array([-np.inf]), t, np.array([np.inf])])
-    dcfL = []
-    for _t in t:
 
-        dcfL.append(compute_act_DCF(S, L, pi, Cfn, Cfp, t))
+    dcfL = []
+    for _th in t:
+
+        dcfL.append(compute_act_DCF(S, L, pi, Cfn, Cfp, th=_th))
 
     return np.array(dcfL).min()
+
 
 def bayes_error_plot(pArray, S, L, minCost=False):
     y = []
@@ -86,13 +89,6 @@ def bayes_error_plot(pArray, S, L, minCost=False):
 
 
 def plot_performance(scores, lables):
-    #TODO ADD THE CONFUSION MATRIX AND ROC PLOT, MAYBE DCF PLOT
-    #TODO CHECK THAT BAYES COMES OUT RIGHT
-
-    # not work for logistic regression as this does not produce log likelihood
-    # different thrsholds if the scores include the priors
-       
-    #TODO THIS MIGHT NEED TO CHANGE
     p = np.linspace(-3, 3, 21)
     pylab.plot(p, bayes_error_plot(p, scores, lables, minCost = False), color = "r")
     pylab.plot(p, bayes_error_plot(p, scores, lables, minCost = True), color = "b")
@@ -106,7 +102,6 @@ def plot_minDCF(modelname, hpName, hp, y5, y1, y9):
     plt.plot(hp, np.array(y1), label = 'π = 0.1', color='b')
     plt.plot(hp, np.array(y9), label = 'π = 0.9', color='g')
 
-    plt.ylim([0, 1])
     plt.xlabel(hpName)
     plt.ylabel('minDCF')
     plt.show()
